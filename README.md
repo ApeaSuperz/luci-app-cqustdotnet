@@ -1,9 +1,9 @@
-<h1 style="text-align: center">
+<h1 align="center">
 <img src="img/logo.jpg" alt="logo" width="200" />
 <br/>CQUST.net<br/>
 </h1>
 
-<p style="text-align: center">让 OpenWrt 连接认证重科校园网的工具</p>
+<p align="center">让 OpenWrt 连接认证重科校园网的工具</p>
 
 ## 这是什么？
 
