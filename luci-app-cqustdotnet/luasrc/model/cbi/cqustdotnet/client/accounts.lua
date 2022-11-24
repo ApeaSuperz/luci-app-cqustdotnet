@@ -13,7 +13,14 @@ section.anonymous = true
 section.sortable = true  -- 允许排序
 section.template = 'cbi/tblsection'
 ---@language HTML
-section.description = [[您可以添加多个账号，某个账号出现问题时，会根据排序切换到其它账号。]]
+section.description = [[
+您可以添加多个账号，某个账号出现问题时，会根据排序切换到其它账号。<br/>
+<br/>
+<span style="font-weight: normal">
+  注意：账号状态为<span style="color: darkred">密码错误</span>时，不会再尝试使用该账号，状态自然也不再刷新，您必须通过点击<code>修改</code>
+  - <code>保存账号信息</code>来移除此状态。
+</span>
+]]
 section.extedit = api.url('account', '%s')  -- 编辑按钮
 section.create = function(self)
   local existed
@@ -43,12 +50,15 @@ option.rawhtml = true
 option.width = 'auto'
 option.cfgvalue = function(_, section_id)
   local unbanned_timestamp = uci:get(app_name, section_id, 'ban')
-  if not unbanned_timestamp or os.difftime(unbanned_timestamp, os.time()) <= 0 then
-    ---@language HTML
-    return [[<span style="color: green">正常</span>]]
-  else
+  if unbanned_timestamp and os.difftime(unbanned_timestamp, os.time()) > 0 then
     ---@language HTML
     return string.format([[<span style="color: red">禁封至<br/>%s</span>]], os.date('%Y-%m-%d %H:%M:%S', unbanned_timestamp))
+  elseif uci:get_bool(app_name, section_id, 'wrong_password') then
+    ---@language HTML
+    return [[<span style="color: darkred">密码错误</span>]]
+  else
+    ---@language HTML
+    return [[<span style="color: green">正常</span>]]
   end
 end
 

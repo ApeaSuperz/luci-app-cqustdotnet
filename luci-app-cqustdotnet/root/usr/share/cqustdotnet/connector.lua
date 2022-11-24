@@ -86,8 +86,10 @@ local function get_possible_account_name(from, to)
         return nil
       end
 
-      -- 检查账号是否被禁封
-      if account['ban'] and os.difftime(account['ban'], os.time()) > 0 then
+      -- 检查账号状态是否正常
+      if account['wrong_password'] then
+        account = nil
+      elseif account['ban'] and os.difftime(account['ban'], os.time()) > 0 then
         account = nil
       end
     end
@@ -220,18 +222,30 @@ local function try_auth(account)
   if res['result'] ~= 'success' then
     api.log('认证：失败，原因：', res['message'])
 
+    local unparsed_response = true
+
     -- 检查是否被禁封
     local year, month, day, hour, minute, second = res['message']:match('([1-2]%d%d%d)%-([0-1]?%d)%-([0-3]?%d)%s(%d+):([0-5]%d):([0-5]%d)')
     if year then
+      unparsed_response = false
       local unbanned_timestamp = os.time({ year = year, month = month, day = day, hour = hour, minute = minute, second = second })
       api.log('账号 ', account['remark'], ' (', account['.name'], ') 被禁封至 ', year, '-', month, '-', day, ' ', hour, ':', minute, ':', second, ' (', unbanned_timestamp, ')')
       uci:set(app_name, account['.name'], 'ban', unbanned_timestamp)
-      uci:commit(app_name)
-      return false
+    end
+
+    -- 检查密码是否错误
+    if res['message']:find('密码', 1, true) then
+      unparsed_response = false
+      api.log('账号 ', account['remark'], ' (', account['.name'], ') 密码错误')
+      uci:set(app_name, account['.name'], 'wrong_password', 1)
     end
 
     -- TODO: 认证响应适配
-    api.log('意料之外的认证响应：', api.trim_string(server_msg))
+    if unparsed_response then
+      api.log('意料之外的认证响应：', api.trim_string(server_msg))
+    else
+      uci:commit(app_name)
+    end
     return false
   end
 
