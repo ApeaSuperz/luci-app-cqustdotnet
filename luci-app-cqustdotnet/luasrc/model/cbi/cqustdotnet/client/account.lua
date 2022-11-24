@@ -65,15 +65,13 @@ option.inputstyle = 'save'
 option.write = function()
   if map.changed then
     local changed_configs = map.uci:changes(app_name)[app_name][arg[1]]
-    if changed_configs then
-      -- 更改了账号，清除禁封状态
-      if changed_configs['username'] then
-        map.uci:delete(app_name, arg[1], 'ban')
-      end
-
-      map.uci:delete(app_name, arg[1], 'wrong_password')  -- 无论是否更改了密码，都清除密码错误状态，因为用户可以重设校园网密码为本系统内填写的密码
-      map.uci:commit(app_name)
+    -- 更改了账号，清除禁封状态
+    if changed_configs['username'] then
+      map.uci:delete(app_name, arg[1], 'ban')
     end
+
+    map.uci:delete(app_name, arg[1], 'wrong_password')  -- 无论是否更改了密码，都清除密码错误状态，因为用户可以重设校园网密码为本系统内填写的密码
+    map.uci:commit(app_name)
   end
   api.http.redirect(map.redirect)
 end
