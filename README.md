@@ -27,7 +27,7 @@ CQUST.net 可以检测校园网的认证情况，自动进行认证。
 
 ### 安装
 
-目前，本软件没有上传到软件源仓库的计划，请自行下载到装有 OpenWrt 的设备中，再使用 opkg 从本地安装。
+目前，本软件没有上传到软件源仓库的计划，请自行[下载](https://github.com/ApeaSuperz/luci-app-cqustdotnet/releases)到装有 OpenWrt 的设备中，再使用 opkg 从本地安装。
 
 使用 opkg 安装：
 
