@@ -2,7 +2,9 @@ local api = require('luci.model.cbi.cqustdotnet.api.api')
 
 local app_name = api.app_name
 
-map = Map(app_name)
+map = Map(app_name, 'CQUST.net')
+---@language HTML
+map.description = [[一个用于连接认证重科校园网的工具，可以检测校园网的认证情况，自动进行认证。]]
 map.pageaction = false  -- 不显示页面上的保存/应用按钮，由我们自定义的按钮来控制，这样保存效率更高且不会影响其它 luci app
 
 section = map:section(NamedSection, 'config')

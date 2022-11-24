@@ -86,7 +86,10 @@ local function get_possible_account_name(from, to)
         return nil
       end
 
-      -- TODO: 检查账号是否被禁封
+      -- 检查账号是否被禁封
+      if account['ban'] and os.difftime(account['ban'], os.time()) > 0 then
+        account = nil
+      end
     end
     index = index + 1
   end
@@ -169,22 +172,6 @@ end
 --- 尝试登录，返回成功与否。
 ---
 --- 该函数还负责记录失败时的信息到账号内，比如账号被禁封的话，禁封到何时。
----
---- HTTP/1.1 200 OK
---- X-Frame-Options: SAMEORIGIN
---- X-XSS-Protection: 1; mode=block
---- X-Powered-By:
---- Cache-Control: max-age=0
---- Expires: Wed, 31 Dec 1969 23:59:59 GMT
---- Pragma: no-cache
---- Set-Cookie: JSESSIONID=3FDC359EC7EC3B030F781F34B1B1BA1F; Path=/eportal; HttpOnly
---- Content-Type: text/html
---- Content-Length: 220
---- Date: Sat, 19 Nov 2022 11:53:50 GMT
---- Server:
----
---- {"userIndex":"66353830653066653331353432646135396664336435313639643131373064325f3137322e32312e38312e3233375f32303232353230383933","result":"success","message":"","forwordurl":null,"keepaliveInterval":0,"validCodeUrl":""}
----
 ---@param account table<string, string>
 ---@return boolean
 local function try_auth(account)
@@ -233,8 +220,17 @@ local function try_auth(account)
   if res['result'] ~= 'success' then
     api.log('认证：失败，原因：', res['message'])
 
-    -- TODO: 认证响应适配
+    -- 检查是否被禁封
+    local year, month, day, hour, minute, second = res['message']:match('([1-2]%d%d%d)%-([0-1]?%d)%-([0-3]?%d)%s(%d+):([0-5]%d):([0-5]%d)')
+    if year then
+      local unbanned_timestamp = os.time({ year = year, month = month, day = day, hour = hour, minute = minute, second = second })
+      api.log('账号 ', account['remark'], ' (', account['.name'], ') 被禁封至 ', year, '-', month, '-', day, ' ', hour, ':', minute, ':', second, ' (', unbanned_timestamp, ')')
+      uci:set(app_name, account['.name'], 'ban', unbanned_timestamp)
+      uci:commit(app_name)
+      return false
+    end
 
+    -- TODO: 认证响应适配
     api.log('意料之外的认证响应：', api.trim_string(server_msg))
     return false
   end
@@ -248,14 +244,29 @@ local function test_and_auto_switch()
     return
   end
 
-  local current_account = uci:get(app_name, 'config', 'current_account')
-  local new_account_name = get_possible_account_name(current_account)
-  local new_account = uci:get_all(app_name, new_account_name)
+  -- 尝试一次登录当前账号，如果禁封账号需要登录来触发计时
+  local current_account_name = uci:get(app_name, 'config', 'current_account')
+  if current_account_name then
+    local current_account = uci:get_all(app_name, current_account_name)
+    if try_auth(current_account) then
+      api.log('自动认证：重新使用账号 ', current_account['remark'], ' (', current_account_name, ') 认证')
+      return
+    end
+  end
 
-  -- TODO
+  local new_account_name = get_possible_account_name(current_account_name)
+  local new_account = uci:get_all(app_name, new_account_name)
   if try_auth(new_account) then
     api.log('自动认证：切换到账号 ', new_account['remark'], ' (', new_account_name, ')')
     uci:set(app_name, 'config', 'current_account', new_account['.name'])
+    uci:commit(app_name)
+    return
+  end
+
+  -- 自动切换账号失败，把当前账号置空，避免反复尝试登录当前账号
+  if current_account_name then
+    api.log('自动认证：当前无可用账号')
+    uci:delete(app_name, 'config', 'current_account')
     uci:commit(app_name)
   end
 end
@@ -297,7 +308,7 @@ elseif arg[1] == 'get_possible_account' then
 elseif arg[1] == 'cleanup' then
   cleanup()
 elseif arg[1] == 'test' then
-  print(try_auth(uci:get_all(app_name, get_possible_account_name())))
+  print(test_and_auto_switch())
 else
   start()
 end

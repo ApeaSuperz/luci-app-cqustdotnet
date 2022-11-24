@@ -50,9 +50,3 @@ opkg install '/tmp/upload/luci-app-cqustdotnet.ipk'
 ### 查看运行状况
 
 您可以在 `CQUST.net` 的 `日志` 栏中查看运行状况。
-
-## 注意
-
-CQUST.net 尚有问题没有解决，当账号数量只有 1 个，并且无法成功认证时（如被禁封），会无限制尝试认证。
-
-该问题将很快被修复。
