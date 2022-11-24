@@ -7,7 +7,7 @@ http = require('luci.http')
 app_name = 'cqustdotnet'
 
 function url(...)
-  local url = string.format('/admin/services/%s', app_name)
+  local url = string.format('admin/services/%s', app_name)
   local args = { ... }
   for _, v in pairs(args) do
     if v ~= '' then
