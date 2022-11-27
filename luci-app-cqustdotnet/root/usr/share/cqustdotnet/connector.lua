@@ -271,7 +271,7 @@ local function test_and_auto_switch()
   local new_account_name = get_possible_account_name(current_account_name)
   local new_account = uci:get_all(app_name, new_account_name)
   if try_auth(new_account) then
-    api.log('自动认证：切换到账号 ', new_account['username'], ' (', current_account_name['remark'], ')')
+    api.log('自动认证：切换到账号 ', new_account['username'], ' (', new_account['remark'], ')')
     uci:set(app_name, 'config', 'current_account', new_account['.name'])
     uci:commit(app_name)
     return
