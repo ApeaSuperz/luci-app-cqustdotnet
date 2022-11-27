@@ -229,14 +229,14 @@ local function try_auth(account)
     if year then
       unparsed_response = false
       local unbanned_timestamp = os.time({ year = year, month = month, day = day, hour = hour, minute = minute, second = second })
-      api.log('账号 ', account['remark'], ' (', account['.name'], ') 被禁封至 ', year, '-', month, '-', day, ' ', hour, ':', minute, ':', second, ' (', unbanned_timestamp, ')')
+      api.log('账号 ', account['username'], ' (', account['remark'], ') 被禁封至 ', year, '-', month, '-', day, ' ', hour, ':', minute, ':', second, ' (', unbanned_timestamp, ')')
       uci:set(app_name, account['.name'], 'ban', unbanned_timestamp)
     end
 
     -- 检查密码是否错误
     if res['message']:find('密码', 1, true) then
       unparsed_response = false
-      api.log('账号 ', account['remark'], ' (', account['.name'], ') 密码错误')
+      api.log('账号 ', account['username'], ' (', account['remark'], ') 密码错误')
       uci:set(app_name, account['.name'], 'wrong_password', 1)
     end
 
@@ -263,7 +263,7 @@ local function test_and_auto_switch()
   if current_account_name then
     local current_account = uci:get_all(app_name, current_account_name)
     if try_auth(current_account) then
-      api.log('自动认证：重新使用账号 ', current_account['remark'], ' (', current_account_name, ') 认证')
+      api.log('自动认证：重新使用账号 ', current_account['username'], ' (', current_account['remark'], ') 认证')
       return
     end
   end
@@ -271,7 +271,7 @@ local function test_and_auto_switch()
   local new_account_name = get_possible_account_name(current_account_name)
   local new_account = uci:get_all(app_name, new_account_name)
   if try_auth(new_account) then
-    api.log('自动认证：切换到账号 ', new_account['remark'], ' (', new_account_name, ')')
+    api.log('自动认证：切换到账号 ', new_account['username'], ' (', current_account_name['remark'], ')')
     uci:set(app_name, 'config', 'current_account', new_account['.name'])
     uci:commit(app_name)
     return
