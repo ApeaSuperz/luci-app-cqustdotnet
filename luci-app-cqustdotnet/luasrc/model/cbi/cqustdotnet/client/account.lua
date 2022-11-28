@@ -63,6 +63,10 @@ option = section:option(Button, 'commit')
 option.inputtitle = '保存账号信息'
 option.inputstyle = 'save'
 option.write = function()
+  if input_section.error then
+    return
+  end
+
   if map.changed then
     local changed_configs = map.uci:changes(app_name)[app_name][arg[1]]
     -- 更改了账号，清除禁封状态
@@ -74,9 +78,7 @@ option.write = function()
     map.uci:commit(app_name)
   end
 
-  if not input_section.error then
-    api.http.redirect(map.redirect)
-  end
+  api.http.redirect(map.redirect)
 end
 
 return map
