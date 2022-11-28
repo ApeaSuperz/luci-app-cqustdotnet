@@ -6,11 +6,11 @@ map = Map(app_name)
 map.redirect = api.url('accounts')
 map.pageaction = false
 
-section = map:section(NamedSection, arg[1])
-section.addremove = false
-section.dynamic = false
+local input_section = map:section(NamedSection, arg[1])
+input_section.addremove = false
+input_section.dynamic = false
 
-option = section:option(Value, 'remark', '账号备注')
+option = input_section:option(Value, 'remark', '账号备注')
 option.rmempty = false
 option.validate = function(self, value, sec)
   if value then
@@ -27,7 +27,7 @@ option.validate = function(self, value, sec)
   end
 end
 
-option = section:option(Value, 'username', '用户名')
+option = input_section:option(Value, 'username', '用户名')
 option.rows = 3
 option.rmempty = false
 option.validate = function(self, value, sec)
@@ -45,7 +45,7 @@ option.validate = function(self, value, sec)
   end
 end
 
-option = section:option(Value, 'password', '密码')
+option = input_section:option(Value, 'password', '密码')
 option.password = true
 option.rmempty = false
 
@@ -73,7 +73,10 @@ option.write = function()
     map.uci:delete(app_name, arg[1], 'wrong_password')  -- 无论是否更改了密码，都清除密码错误状态，因为用户可以重设校园网密码为本系统内填写的密码
     map.uci:commit(app_name)
   end
-  api.http.redirect(map.redirect)
+
+  if not input_section.error then
+    api.http.redirect(map.redirect)
+  end
 end
 
 return map
