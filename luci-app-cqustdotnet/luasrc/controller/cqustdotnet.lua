@@ -26,8 +26,8 @@ function index()
 end
 
 local api = require('luci.model.cbi.cqustdotnet.api.api')
-
-local is_running = false
+local accounts = require('luci.model.cbi.cqustdotnet.api.accounts')
+local const = require('luci.model.cbi.cqustdotnet.api.constants')
 
 function reset_config()
   ---@language Shell Script
@@ -40,8 +40,14 @@ end
 
 function status()
   local status = {
-    core_functions_running = is_running
+    connector = is_process_running(const.LUCI_NAME .. '/connector.lua')
   }
+
+  ---@type Account|nil
+  local current_account = accounts.current()
+  if current_account then
+    status.account = string.format('%s (%s)', current_account.username, current_account.remark)
+  end
 
   luci.http.prepare_content('application/json')
   luci.http.write_json(status)
@@ -53,4 +59,13 @@ end
 
 function clear_log()
   luci.sys.call("echo '' > /var/log/cqustdotnet.log")
+end
+
+function is_process_running(process_name)
+  local advanced_ps = luci.sys.exec("ps --version 2>&1 | grep -c procps-ng | tr -d '\n'")
+  if advanced_ps == '1' then
+    return luci.sys.call(string.format("ps -efw | grep '%s' | grep -v grep >/dev/null", process_name)) == 0
+  else
+    return luci.sys.call(string.format("ps -w | grep '%s' | grep -v grep >/dev/null", process_name)) == 0
+  end
 end

@@ -72,3 +72,14 @@ function get_first_available(start_account_name, end_account_name)
     index = index + 1
   end
 end
+
+---
+--- 获取当前在使用的账号。
+---@return Account|nil 当前账号，无账号在使用时返回 nil
+function current()
+  local current_account_name = uci:get(const.LUCI_NAME, 'config', 'current_account')
+  if not current_account_name then
+    return nil
+  end
+  return uci:get_all(const.LUCI_NAME, current_account_name)
+end
