@@ -3,11 +3,10 @@ sys = require('luci.sys')
 uci = require('luci.model.uci').cursor()
 dispatcher = require('luci.dispatcher')
 http = require('luci.http')
-
-app_name = 'cqustdotnet'
+const = require('luci.model.cbi.cqustdotnet.api.constants')
 
 function url(...)
-  local url = string.format('admin/services/%s', app_name)
+  local url = string.format('admin/services/%s', const.LUCI_NAME)
   local args = { ... }
   for _, v in pairs(args) do
     if v ~= '' then
@@ -26,7 +25,7 @@ function log(...)
   end
 
   if not log_file then
-    log_file = io.open(string.format('/var/log/%s.log', app_name), 'a')
+    log_file = io.open(string.format('/var/log/%s.log', const.LUCI_NAME), 'a')
   end
 
   if log_file then

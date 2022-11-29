@@ -1,11 +1,11 @@
 #!/usr/bin/lua
 
 local ucic = require('uci')
+local const = require('luci.model.cbi.cqustdotnet.api.constants')
 
-local APP_NAME = 'cqustdotnet'
-local TMP_PATH = '/tmp/etc/' .. APP_NAME
-local LOG_FILE = '/var/log/' .. APP_NAME .. '.log'
-local APP_PATH = '/usr/share/' .. APP_NAME
+local TMP_PATH = '/tmp/etc/' .. const.LUCI_NAME
+local LOG_FILE = '/var/log/' .. const.LUCI_NAME .. '.log'
+local APP_PATH = '/usr/share/' .. const.LUCI_NAME
 
 local ucic_cursor = ucic.cursor
 local uci = ucic_cursor()
@@ -70,7 +70,7 @@ local app_enabled
 ---@return boolean
 local function is_app_enabled(reload)
   if reload or app_enabled == nil then
-    app_enabled = uci:get(APP_NAME, 'config', 'enabled') or '0'
+    app_enabled = uci:get(const.LUCI_NAME, 'config', 'enabled') or '0'
   end
   return app_enabled == '1'
 end
@@ -81,7 +81,7 @@ local function clean_crontab()
   local crontab_file = io.open('/etc/crontabs/root', 'rw')
   local crontab = {}
   for cron in crontab_file:lines('*L') do
-    if not cron:find(APP_NAME) then
+    if not cron:find(const.LUCI_NAME) then
       table.insert(crontab, cron)
     end
   end
@@ -124,9 +124,9 @@ local function stop()
   clean_log_if_too_long()
 
   ---@language Shell Script
-  os.execute(string.format("pgrep -af '%s/' | awk '! /app\\.lua/{print $1}' | xargs kill -9 >/dev/null 2>&1", APP_NAME))
+  os.execute(string.format("pgrep -af '%s/' | awk '! /app\\.lua/{print $1}' | xargs kill -9 >/dev/null 2>&1", const.LUCI_NAME))
   stop_crontab()
-  os.remove('/tmp/lock/' .. APP_NAME .. '_script.lock')
+  os.remove('/tmp/lock/' .. const.LUCI_NAME .. '_script.lock')
   log('清空并关闭相关程序和缓存完成')
 
   os.exit(0)

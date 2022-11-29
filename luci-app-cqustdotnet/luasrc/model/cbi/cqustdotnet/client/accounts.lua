@@ -1,9 +1,7 @@
 local api = require('luci.model.cbi.cqustdotnet.api.api')
+local const = require('luci.model.cbi.cqustdotnet.api.constants')
 
-local uci = api.uci
-local app_name = api.app_name
-
-map = Map(api.app_name)
+map = Map(const.LUCI_NAME)
 map.pageaction = false  -- 不显示页面上的保存/应用按钮
 
 -- 账号列表
@@ -24,7 +22,7 @@ section.description = [[
 section.extedit = api.url('account', '%s')  -- 编辑按钮
 section.create = function(self)
   local existed
-  uci:foreach(app_name, 'accounts', function(account)
+  map.uci:foreach(const.LUCI_NAME, 'accounts', function(account)
     if not account['remark'] or not account['username'] or not account['password'] then
       existed = account['.name']
     end
@@ -49,11 +47,11 @@ option = section:option(DummyValue, 'state', '状态')
 option.rawhtml = true
 option.width = 'auto'
 option.cfgvalue = function(_, section_id)
-  local unbanned_timestamp = uci:get(app_name, section_id, 'ban')
+  local unbanned_timestamp = map.uci:get(const.LUCI_NAME, section_id, 'ban')
   if unbanned_timestamp and os.difftime(unbanned_timestamp, os.time()) > 0 then
     ---@language HTML
     return string.format([[<span style="color: red">禁封至<br/>%s</span>]], os.date('%Y-%m-%d %H:%M:%S', unbanned_timestamp))
-  elseif uci:get_bool(app_name, section_id, 'wrong_password') then
+  elseif map.uci:get_bool(const.LUCI_NAME, section_id, 'wrong_password') then
     ---@language HTML
     return [[<span style="color: darkred">密码错误</span>]]
   else
@@ -73,7 +71,7 @@ option = section:option(Button, 'commit')
 option.inputtitle = '保存更改'
 option.inputstyle = 'save'
 option.write = function()
-  uci:commit(app_name)
+  map.uci:commit(const.LUCI_NAME)
 end
 
 return map

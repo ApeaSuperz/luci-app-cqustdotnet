@@ -1,8 +1,7 @@
 local api = require('luci.model.cbi.cqustdotnet.api.api')
+local const = require('luci.model.cbi.cqustdotnet.api.constants')
 
-local app_name = api.app_name
-
-map = Map(app_name, 'CQUST.net')
+map = Map(const.LUCI_NAME, const.APP_NAME)
 ---@language HTML
 map.description = [[一个用于连接认证重科校园网的工具，可以检测校园网的认证情况，自动进行认证。]]
 map.pageaction = false  -- 不显示页面上的保存/应用按钮，由我们自定义的按钮来控制，这样保存效率更高且不会影响其它 luci app
@@ -24,15 +23,15 @@ option = section:option(Button, 'commit')
 option.inputtitle = '保存设置'
 option.inputstyle = 'save'
 option.write = function()
-  map.uci:commit(app_name)
+  map.uci:commit(const.LUCI_NAME)
 end
 
 option = section:option(Button, 'apply')
 option.inputtitle = '保存&应用设置'
 option.inputstyle = 'apply'
 option.write = function()
-  map.uci:commit(app_name)
-  api.sys.call(string.format('/etc/init.d/%s restart >/dev/null 2>&1 &', app_name))
+  map.uci:commit(const.LUCI_NAME)
+  api.sys.call(string.format('/etc/init.d/%s restart >/dev/null 2>&1 &', const.LUCI_NAME))
   api.http.redirect(api.url())
 end
 

@@ -1,10 +1,8 @@
-local api = require('luci.model.cbi.cqustdotnet.api.api')
+local const = require('luci.model.cbi.cqustdotnet.api.constants')
 
-local app_name = api.app_name
-
-local form = SimpleForm(app_name)
+local form = SimpleForm(const.LUCI_NAME)
 form.reset = false
 form.submit = false
-form:append(Template(app_name .. "/log/log"))
+form:append(Template(const.LUCI_NAME .. '/log/log'))
 
 return form

@@ -2,16 +2,16 @@ module('luci.controller.cqustdotnet', package.seeall)
 
 function index()
   -- upvalues 在此函数中是 nil，使用的话需要 require
-  local app_name = require('luci.model.cbi.cqustdotnet.api.api').app_name
+  local app_name = require('luci.model.cbi.cqustdotnet.api.constants').LUCI_NAME
 
   entry({ 'admin', 'services', app_name }).dependent = true
   entry({ 'admin', 'services', app_name, 'reset_config' }, call('reset_config')).leaf = true
   if not nixio.fs.access('/etc/config/cqustdotnet') then
     return
   end
-  e = entry({ "admin", "services", app_name }, alias('admin', 'services', app_name, 'index'), _('CQUST.net'), -10)
+  e = entry({ 'admin', 'services', app_name }, alias('admin', 'services', app_name, 'index'), _('CQUST.net'), -10)
   e.dependent = true
-  e.acl_depends = { "luci-app-cqustdotnet" }
+  e.acl_depends = { 'luci-app-cqustdotnet' }
 
   -- Client
   entry({ 'admin', 'services', app_name, 'index' }, cbi(app_name .. '/client/global'), _('主页'), 1).dependent = true
@@ -30,6 +30,7 @@ local api = require('luci.model.cbi.cqustdotnet.api.api')
 local is_running = false
 
 function reset_config()
+  ---@language Shell Script
   luci.sys.call([[
     /etc/init.d/cqustdotnet stop
     [ -f /usr/share/cqustdotnet/0_default_config ] && cp -f /usr/share/cqustdotnet/0_default_config /etc/config/cqustdotnet

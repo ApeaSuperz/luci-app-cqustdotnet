@@ -4,12 +4,12 @@ local nixio = require('nixio')
 local http = require('luci.http')
 local json = require('luci.jsonc')
 local api = require('luci.model.cbi.cqustdotnet.api.api')
+local const = require('luci.model.cbi.cqustdotnet.api.constants')
 local accounts = require('luci.model.cbi.cqustdotnet.api.accounts')
 
 local uci = api.uci
-local app_name = api.app_name
 
-local LOCK_FILE = '/tmp/lock/' .. app_name .. '_script.lock'
+local LOCK_FILE = '/tmp/lock/' .. const.LUCI_NAME .. '_script.lock'
 
 local function is_file_exists(filename)
   return nixio.fs.stat(filename, 'type') == 'reg'
@@ -174,21 +174,21 @@ local function try_auth(account)
       unparsed_response = false
       local unbanned_timestamp = os.time({ year = year, month = month, day = day, hour = hour, minute = minute, second = second })
       api.log('账号 ', account['username'], ' (', account['remark'], ') 被禁封至 ', year, '-', month, '-', day, ' ', hour, ':', minute, ':', second, ' (', unbanned_timestamp, ')')
-      uci:set(app_name, account['.name'], 'ban', unbanned_timestamp)
+      uci:set(const.LUCI_NAME, account['.name'], 'ban', unbanned_timestamp)
     end
 
     -- 检查密码是否错误
     if res['message']:find('密码', 1, true) then
       unparsed_response = false
       api.log('账号 ', account['username'], ' (', account['remark'], ') 密码错误')
-      uci:set(app_name, account['.name'], 'wrong_password', 1)
+      uci:set(const.LUCI_NAME, account['.name'], 'wrong_password', 1)
     end
 
     -- TODO: 认证响应适配
     if unparsed_response then
       api.log('意料之外的认证响应：', api.trim_string(server_msg))
     else
-      uci:commit(app_name)
+      uci:commit(const.LUCI_NAME)
     end
     return false
   end
@@ -203,9 +203,9 @@ local function test_and_auto_switch()
   end
 
   -- 尝试一次登录当前账号，如果禁封账号需要登录来触发计时
-  local current_account_name = uci:get(app_name, 'config', 'current_account')
+  local current_account_name = uci:get(const.LUCI_NAME, 'config', 'current_account')
   if current_account_name then
-    local current_account = uci:get_all(app_name, current_account_name)
+    local current_account = uci:get_all(const.LUCI_NAME, current_account_name)
     if try_auth(current_account) then
       api.log('自动认证：重新使用账号 ', current_account['username'], ' (', current_account['remark'], ') 认证')
       return
@@ -215,27 +215,27 @@ local function test_and_auto_switch()
   local new_account = accounts.get_first_available(current_account_name)
   if try_auth(new_account) then
     api.log('自动认证：切换到账号 ', new_account['username'], ' (', new_account['remark'], ')')
-    uci:set(app_name, 'config', 'current_account', new_account['.name'])
-    uci:commit(app_name)
+    uci:set(const.LUCI_NAME, 'config', 'current_account', new_account['.name'])
+    uci:commit(const.LUCI_NAME)
     return
   end
 
   -- 自动切换账号失败，把当前账号置空，避免反复尝试登录当前账号
   if current_account_name then
     api.log('自动认证：当前无可用账号')
-    uci:delete(app_name, 'config', 'current_account')
-    uci:commit(app_name)
+    uci:delete(const.LUCI_NAME, 'config', 'current_account')
+    uci:commit(const.LUCI_NAME)
   end
 end
 
 local function start()
-  local enabled = uci:get(app_name, 'config', 'enabled')
+  local enabled = uci:get(const.LUCI_NAME, 'config', 'enabled')
   if enabled ~= '1' then
     return
   end
 
   -- 检查间隔，一次运行只获取一次，该值变更后需要重新运行该脚本
-  local interval = uci:get(app_name, 'config', 'network_detection_interval') or 5
+  local interval = uci:get(const.LUCI_NAME, 'config', 'network_detection_interval') or 5
 
   api.log('守护进程启动，网络检测间隔 ', interval, ' 秒')
 
