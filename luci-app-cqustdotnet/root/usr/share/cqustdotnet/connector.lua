@@ -4,6 +4,7 @@ local nixio = require('nixio')
 local http = require('luci.http')
 local json = require('luci.jsonc')
 local api = require('luci.model.cbi.cqustdotnet.api.api')
+local accounts = require('luci.model.cbi.cqustdotnet.api.accounts')
 
 local uci = api.uci
 local app_name = api.app_name
@@ -39,63 +40,6 @@ local function can_access_auth(max_retry)
   end
   request:close()
   return false
-end
-
----
---- 获取可能可用的账号，不保证可以成功登录。账号是否可用应该在登录时判断并记录。
----
---- 设定的起始账号都不会被包含在返回结果内，最终的返回值是账号的 .name 属性。
---- 无可用的账号时返回 nil。
----@overload fun():string
----@overload fun(from:string):string
----@param from string|nil
----@param to string
----@return string|nil
-local function get_possible_account_name(from, to)
-  local start_check = not from
-  local account, index = nil, 0
-  while not account do
-    if not start_check then
-      local datatype, account_name = uci:get(app_name, '@accounts[' .. index .. ']')
-
-      -- 没有找到起始账号
-      if not datatype then
-        return nil
-      end
-
-      -- 找到起始账号，可以开始做额外检查了
-      if account_name == from then
-        start_check = true
-      end
-    else
-      account = uci:get_all(app_name, '@accounts[' .. index .. ']')
-
-      -- 遍历到最后一个账号了
-      if not account then
-        -- 没有指定起始账号的情况下，遍历到最后一个账号，说明没有可用账号
-        if not from then
-          return nil
-        end
-
-        -- 指定了起始账号的情况下，在起始账号之前的账号还没有做详细校验
-        return get_possible_account_name(nil, from)
-      end
-
-      -- 限制了结束账号
-      if account['.name'] == to then
-        return nil
-      end
-
-      -- 检查账号状态是否正常
-      if account['wrong_password'] then
-        account = nil
-      elseif account['ban'] and os.difftime(account['ban'], os.time()) > 0 then
-        account = nil
-      end
-    end
-    index = index + 1
-  end
-  return account['.name']
 end
 
 local redirect_request_http_headers
@@ -268,8 +212,7 @@ local function test_and_auto_switch()
     end
   end
 
-  local new_account_name = get_possible_account_name(current_account_name)
-  local new_account = uci:get_all(app_name, new_account_name)
+  local new_account = accounts.get_first_available(current_account_name)
   if try_auth(new_account) then
     api.log('自动认证：切换到账号 ', new_account['username'], ' (', new_account['remark'], ')')
     uci:set(app_name, 'config', 'current_account', new_account['.name'])
@@ -317,8 +260,14 @@ end
 
 if not arg or #arg < 1 or not arg[1] then
   start()
-elseif arg[1] == 'get_possible_account' then
-  print(get_possible_account_name(arg[2], arg[3]))
+elseif arg[1] == 'get_available_account' then
+  ---@type Account
+  local account = accounts.get_first_available(arg[2], arg[3])
+  if account then
+    print(account['.name'])
+  else
+    print()
+  end
 elseif arg[1] == 'cleanup' then
   cleanup()
 elseif arg[1] == 'test' then
