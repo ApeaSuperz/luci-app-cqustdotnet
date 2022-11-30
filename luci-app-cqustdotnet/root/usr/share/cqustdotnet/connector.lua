@@ -203,16 +203,15 @@ local function test_and_auto_switch()
   end
 
   -- 尝试一次登录当前账号，如果禁封账号需要登录来触发计时
-  local current_account_name = uci:get(const.LUCI_NAME, 'config', 'current_account')
-  if current_account_name then
-    local current_account = uci:get_all(const.LUCI_NAME, current_account_name)
+  local current_account = accounts.current()  ---@type Account
+  if current_account then
     if try_auth(current_account) then
       api.log('自动认证：重新使用账号 ', current_account['username'], ' (', current_account['remark'], ') 认证')
       return
     end
   end
 
-  local new_account = accounts.get_first_available(current_account_name)
+  local new_account = accounts.get_first_available(current_account['.name'])
   if try_auth(new_account) then
     api.log('自动认证：切换到账号 ', new_account['username'], ' (', new_account['remark'], ')')
     uci:set(const.LUCI_NAME, 'config', 'current_account', new_account['.name'])
@@ -221,7 +220,7 @@ local function test_and_auto_switch()
   end
 
   -- 自动切换账号失败，把当前账号置空，避免反复尝试登录当前账号
-  if current_account_name then
+  if current_account then
     api.log('自动认证：当前无可用账号')
     uci:delete(const.LUCI_NAME, 'config', 'current_account')
     uci:commit(const.LUCI_NAME)
