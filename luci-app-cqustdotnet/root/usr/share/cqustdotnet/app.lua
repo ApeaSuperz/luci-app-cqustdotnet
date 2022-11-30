@@ -126,7 +126,7 @@ local function stop()
   ---@language Shell Script
   os.execute(string.format("pgrep -af '%s/' | awk '! /app\\.lua/{print $1}' | xargs kill -9 >/dev/null 2>&1", const.LUCI_NAME))
   stop_crontab()
-  os.remove('/tmp/lock/' .. const.LUCI_NAME .. '_script.lock')
+  os.remove('/tmp/lock/' .. const.LUCI_NAME .. '_connector.lock')
   log('清空并关闭相关程序和缓存完成')
 
   os.exit(0)

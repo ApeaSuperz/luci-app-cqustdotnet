@@ -45,6 +45,15 @@ function gen_uuid(keep_dash)
   end
 end
 
+function is_process_running(process_name)
+  local advanced_ps = sys.exec("ps --version 2>&1 | grep -c procps-ng | tr -d '\n'")
+  if advanced_ps == '1' then
+    return sys.call(string.format("ps -efw | grep '%s' | grep -v grep >/dev/null", process_name)) == 0
+  else
+    return sys.call(string.format("ps -w | grep '%s' | grep -v grep >/dev/null", process_name)) == 0
+  end
+end
+
 ---
 --- 删除字符串首尾的空白字符。
 ---

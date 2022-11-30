@@ -9,7 +9,7 @@ local accounts = require('luci.model.cbi.cqustdotnet.api.accounts')
 
 local uci = api.uci
 
-local LOCK_FILE = '/tmp/lock/' .. const.LUCI_NAME .. '_script.lock'
+local LOCK_FILE = '/tmp/lock/' .. const.LUCI_NAME .. '_connector.lock'
 
 local function is_file_exists(filename)
   return nixio.fs.stat(filename, 'type') == 'reg'
@@ -118,7 +118,7 @@ end
 --- 尝试登录，返回成功与否。
 ---
 --- 该函数还负责记录失败时的信息到账号内，比如账号被禁封的话，禁封到何时。
----@param account table<string, string>
+---@param account Account
 ---@return boolean
 local function try_auth(account)
   if not account then
@@ -228,6 +228,12 @@ local function test_and_auto_switch()
 end
 
 local function start()
+  if is_file_exists(LOCK_FILE) then
+    api.log('守护进程已经在运行，不重复运行')
+    return
+  end
+  os.execute('touch ' .. LOCK_FILE)
+
   local enabled = uci:get(const.LUCI_NAME, 'config', 'enabled')
   if enabled ~= '1' then
     return
@@ -239,22 +245,9 @@ local function start()
   api.log('守护进程启动，网络检测间隔 ', interval, ' 秒')
 
   while true do
-    if is_file_exists(LOCK_FILE) then
-      nixio.nanosleep(6)
-    else
-      os.execute('touch ' .. LOCK_FILE)
-      test_and_auto_switch()
-      nixio.fs.remove(LOCK_FILE)
-      nixio.nanosleep(interval)
-    end
+    test_and_auto_switch()
+    nixio.nanosleep(interval)
   end
-end
-
----
---- 自清理，强制结束该脚本后，可通过 cleanup 参数再次调用该脚本。
---- 将会清理掉强制退出后可能残留的垃圾，为下一次正常运行做准备。
-local function cleanup()
-  nixio.fs.remove(LOCK_FILE)
 end
 
 if not arg or #arg < 1 or not arg[1] then
@@ -267,8 +260,6 @@ elseif arg[1] == 'get_available_account' then
   else
     print()
   end
-elseif arg[1] == 'cleanup' then
-  cleanup()
 elseif arg[1] == 'test' then
   print(test_and_auto_switch())
 else

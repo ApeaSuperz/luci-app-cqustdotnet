@@ -40,7 +40,7 @@ end
 
 function status()
   local status = {
-    connector = is_process_running(const.LUCI_NAME .. '/connector.lua')
+    connector = api.is_process_running(const.LUCI_NAME .. '/connector.lua')
   }
 
   ---@type Account|nil
@@ -59,13 +59,4 @@ end
 
 function clear_log()
   luci.sys.call("echo '' > /var/log/cqustdotnet.log")
-end
-
-function is_process_running(process_name)
-  local advanced_ps = luci.sys.exec("ps --version 2>&1 | grep -c procps-ng | tr -d '\n'")
-  if advanced_ps == '1' then
-    return luci.sys.call(string.format("ps -efw | grep '%s' | grep -v grep >/dev/null", process_name)) == 0
-  else
-    return luci.sys.call(string.format("ps -w | grep '%s' | grep -v grep >/dev/null", process_name)) == 0
-  end
 end
