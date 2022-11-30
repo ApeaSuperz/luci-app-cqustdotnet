@@ -172,7 +172,7 @@ local function try_auth(account)
     local year, month, day, hour, minute, second = res['message']:match('([1-2]%d%d%d)%-([0-1]?%d)%-([0-3]?%d)%s(%d+):([0-5]%d):([0-5]%d)')
     if year then
       unparsed_response = false
-      local unbanned_timestamp = os.time({ year = year, month = month, day = day, hour = hour, minute = minute, second = second })
+      local unbanned_timestamp = os.time({ year = year, month = month, day = day, hour = hour, min = minute, sec = second })
       api.log('账号 ', account['username'], ' (', account['remark'], ') 被禁封至 ', year, '-', month, '-', day, ' ', hour, ':', minute, ':', second, ' (', unbanned_timestamp, ')')
       uci:set(const.LUCI_NAME, account['.name'], 'ban', unbanned_timestamp)
     end
