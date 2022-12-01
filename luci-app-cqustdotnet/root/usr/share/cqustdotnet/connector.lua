@@ -143,22 +143,23 @@ local function try_auth(account)
   end
   request:setopt('socket', 'rcvtimeo', 1)  -- 接收 1 秒超时
   request:send(auth_request_content)
-  local response = request:recv(1024)
+  local response = request:recv(1024)  ---@type string
   request:close()
   if not response or #response == 0 then
     api.log('认证：无法从认证服务器接收响应')
     return false
   end
 
-  local server_msg = response:match('Server:(.+)$')
-  if not server_msg or #server_msg == 0 then
-    api.log('认证：无法从响应中获取有效信息')
+  local json_str = response:match('%b{}')
+  if not json_str or #json_str <= 2 then
+    local server_msg = response:match('Server:(.+)$')
+    api.log('认证：无法从响应中获取有效信息，服务器响应：', server_msg)
     return false
   end
 
-  local res, err = json.parse(server_msg)
+  local res, err = json.parse(json_str)
   if not res then
-    api.log('认证：无法解析响应中的有效信息（', err, '）：', server_msg)
+    api.log('认证：无法解析响应中的有效信息（', err, '）：', json_str)
     return false
   end
 
