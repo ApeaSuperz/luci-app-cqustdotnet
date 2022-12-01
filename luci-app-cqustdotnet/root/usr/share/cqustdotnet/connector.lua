@@ -211,7 +211,7 @@ local function test_and_auto_switch()
     end
   end
 
-  local new_account = accounts.get_first_available(current_account['.name'])
+  local new_account = accounts.get_first_available(current_account and current_account['.name'] or nil)
   if try_auth(new_account) then
     api.log('自动认证：切换到账号 ', new_account['username'], ' (', new_account['remark'], ')')
     uci:set(const.LUCI_NAME, 'config', 'current_account', new_account['.name'])
@@ -221,7 +221,6 @@ local function test_and_auto_switch()
 
   -- 自动切换账号失败，把当前账号置空，避免反复尝试登录当前账号
   if current_account then
-    api.log('自动认证：当前无可用账号')
     uci:delete(const.LUCI_NAME, 'config', 'current_account')
     uci:commit(const.LUCI_NAME)
   end
